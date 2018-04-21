@@ -42,7 +42,6 @@ class Doms {
             if (reg.test(node.nodeValue)) {
                 var name = RegExp.$1
                 name = name.trim()
-                // node.nodeValue = vm.data[name]//将data的值赋给text
                 new Watcher(vm, node, name, 'nodeValue')
             }
         }

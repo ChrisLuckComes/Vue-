@@ -16,6 +16,7 @@
         <input id='i' v-model='text' type="text">
         <h1>{{text}}</h1>
         <button v-on:click='clickMe'>click me</button>
+        <p>{{info}}</p>
     </div>
     <script>
         var vm = new Vue({
@@ -23,6 +24,11 @@
         data: {
             text: 'lyl',
             title: 'hello world'
+        },
+        computed:{
+            info:function(){
+                return this.text+' '+this.title
+            }
         },
         methods: {
             clickMe() {
