@@ -1,5 +1,6 @@
 import Doms from "./Doms";
 import Dep from "./Dep";
+import Watcher from "./watcher";
 
 export interface VueProps {
   el: string;
@@ -9,8 +10,26 @@ export interface VueProps {
   watch?: any;
 }
 
-export default function Vue(props: VueProps) {
-  this.observeData = function(props, thisArg) {
+export default class Vue {
+  el: string;
+  data: any;
+  methods: any;
+  computed: any;
+  constructor(props: VueProps) {
+    if (props.data) {
+      this.data = this.observeData(props.data, props);
+    }
+    if (props.computed) {
+      this.computed = this.observeComputed(props.computed, this.data);
+    }
+    if (props.methods) {
+      this.methods = this.observeMethod(props.methods, this.data);
+    }
+    let element = document.getElementById(props.el);
+    let dom = new Doms(element, this);
+    element.appendChild(dom);
+  }
+  observeData(props, thisArg) {
     let dep = new Dep();
     let proxy = new Proxy(props, {
       get: function(obj, prop, receiver) {
@@ -39,32 +58,41 @@ export default function Vue(props: VueProps) {
         return true;
       }
     });
+    for (let key in props) {
+      if (Array.isArray(props[key])) {
+        let p = new Proxy(props[key], {
+          set: function(obj, prop, value, receiver) {
+            Reflect.set(obj, prop, value, receiver);
+            dep.notify();
+            return true;
+          }
+        });
+        proxy[key] = p;
+      }
+    }
     return proxy;
-  };
+  }
 
-  this.observeMethod = function(method, thisArg) {
+  observeMethod(method, thisArg) {
     let p = new Proxy(method, {
       get: function(obj, prop, receiver) {
-        // Reflect.apply(obj[prop], thisArg, []);
         return Reflect.get(obj, prop, receiver);
       }
     });
     return p;
-  };
+  }
 
-  if (props.data) {
-    this.data = this.observeData(props.data, props);
+  observeComputed(computed, thisArg) {
+    let p = new Proxy(computed, {
+      get(obj, prop, receiver) {
+        let callback = Reflect.get(obj, prop, receiver);
+        let watcher = Watcher.watchers.filter(x => x.name === prop);
+        watcher[0].value = Reflect.apply(callback, thisArg, []);
+        return watcher[0].value;
+      }
+    });
+    return p;
   }
-  if (props.computed) {
-    this.computed = this.observeData(props.computed, props);
-  }
-  if (props.methods) {
-    this.methods = this.observeMethod(props.methods, props);
-  }
-  //   this.data = this.observe(props);
-  let element = document.getElementById(props.el);
-  let dom = new Doms(element, this);
-  element.appendChild(dom);
 }
 
 function isFunction(obj) {

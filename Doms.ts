@@ -18,8 +18,11 @@ export default function Doms(node: Element, vueInstance: VueProps): void {
       for (let i = 0; i < attr.length; i++) {
         if (attr[i].nodeName === "v-model") {
           let name = attr[i].nodeValue;
+          let type = typeof vueInstance.data[name];
           node.addEventListener("input", function(e: any) {
-            vueInstance.data[name] = (e.target as any).value;
+            let value = (e.target as any).value;
+            vueInstance.data[name] =
+              type === "number" && value != "" ? +value : value;
           });
           new Watcher(vueInstance.data, node, name, "value");
         } else if (attr[i].nodeName.includes("@")) {
@@ -46,7 +49,16 @@ export default function Doms(node: Element, vueInstance: VueProps): void {
       if (reg.test(node.nodeValue)) {
         let name = RegExp.$1;
         name = name.trim();
-        new Watcher(vueInstance.data, node, name, "nodeValue");
+        let vm = null;
+        let isComputed = Reflect.has(vueInstance.computed, name);
+        let isData = Reflect.has(vueInstance.data, name);
+        if (isComputed) {
+          vm = vueInstance.computed;
+        }
+        if (isData) {
+          vm = vueInstance.data;
+        }
+        new Watcher(vm, node, name, "nodeValue");
       }
     }
   };

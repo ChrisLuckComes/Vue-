@@ -2,8 +2,13 @@
   <body>
     <div id="app">
       <input type="text" v-model="a" />
-      <button @click="changeValue">change</button>
-      <span>{{a}}</span>
+      <button @click="changeValue">改变arr[0]=5</button>
+      <br />
+      双向绑定结果:<span>{{a}}</span>
+      <br />
+      arr:<span>{{arr}}</span>
+      <br />
+      computed:{{aPlusOne}}
     </div>
     <script src="./index.ts"></script>
   </body>
